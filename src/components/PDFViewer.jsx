@@ -38,19 +38,114 @@ const PDFViewer = ({ pdfUrl }) => {
         }
       }
       
-      setSelectedText(text)
+      // Expand to full sentence if only one word is selected
+      const expandedText = expandToSentenceContext(text, selection)
+      
+      setSelectedText(expandedText.displayText)
       setPageNumber(detectedPage) // Update current page for display
       
-      console.log('Selected text:', text)
-      console.log('Selection details:', {
-        text: text,
-        length: text.length,
-        words: text.split(' ').length,
+      console.log('=== TEXT SELECTION ===')
+      console.log('Original selection:', text)
+      console.log('Expanded to sentence:', expandedText.fullSentence)
+      console.log('Selected word(s):', expandedText.selectedWords)
+      console.log('Context details:', {
+        originalText: text,
+        fullSentence: expandedText.fullSentence,
+        selectedWords: expandedText.selectedWords,
+        wordCount: text.split(' ').length,
+        sentenceLength: expandedText.fullSentence.length,
         page: detectedPage,
-        viewMode: viewMode
+        viewMode: viewMode,
+        isExpanded: expandedText.wasExpanded
       })
+      console.log('====================')
     } else {
       setSelectedText('')
+    }
+  }
+
+  // Function to expand selection to full sentence context
+  const expandToSentenceContext = (selectedText, selection) => {
+    try {
+      const range = selection.getRangeAt(0)
+      const containerElement = range.commonAncestorContainer.parentElement
+      
+      // Get the full text content of the container
+      let fullText = ''
+      if (containerElement) {
+        // Try to get text from the text layer span or parent
+        const textLayerSpan = containerElement.closest('.react-pdf__Page__textContent span') || 
+                             containerElement.closest('.react-pdf__Page__textContent')
+        
+        if (textLayerSpan) {
+          fullText = textLayerSpan.textContent || textLayerSpan.innerText || ''
+        } else {
+          fullText = containerElement.textContent || containerElement.innerText || ''
+        }
+      }
+      
+      if (!fullText) {
+        return {
+          displayText: selectedText,
+          fullSentence: selectedText,
+          selectedWords: selectedText,
+          wasExpanded: false
+        }
+      }
+      
+      // Find the position of selected text in the full text
+      const selectedIndex = fullText.indexOf(selectedText)
+      if (selectedIndex === -1) {
+        return {
+          displayText: selectedText,
+          fullSentence: selectedText,
+          selectedWords: selectedText,
+          wasExpanded: false
+        }
+      }
+      
+      // Define sentence boundaries (periods, exclamation marks, question marks)
+      const sentenceEnders = /[.!?]+/g
+      
+      // Find sentence start (look backwards for sentence enders)
+      let sentenceStart = 0
+      const textBeforeSelection = fullText.substring(0, selectedIndex)
+      const lastSentenceEnderMatch = textBeforeSelection.match(/[.!?]+/g)
+      if (lastSentenceEnderMatch) {
+        const lastEnderIndex = textBeforeSelection.lastIndexOf(lastSentenceEnderMatch[lastSentenceEnderMatch.length - 1])
+        sentenceStart = lastEnderIndex + lastSentenceEnderMatch[lastSentenceEnderMatch.length - 1].length
+      }
+      
+      // Find sentence end (look forwards for sentence enders)
+      let sentenceEnd = fullText.length
+      const textAfterSelection = fullText.substring(selectedIndex + selectedText.length)
+      const nextSentenceEnderMatch = textAfterSelection.match(/[.!?]+/)
+      if (nextSentenceEnderMatch) {
+        const nextEnderIndex = textAfterSelection.indexOf(nextSentenceEnderMatch[0])
+        sentenceEnd = selectedIndex + selectedText.length + nextEnderIndex + nextSentenceEnderMatch[0].length
+      }
+      
+      // Extract the full sentence
+      const fullSentence = fullText.substring(sentenceStart, sentenceEnd).trim()
+      
+      // Check if we actually expanded (more than just the selected text)
+      const wasExpanded = fullSentence !== selectedText.trim()
+      
+      return {
+        displayText: wasExpanded ? fullSentence : selectedText,
+        fullSentence: fullSentence,
+        selectedWords: selectedText,
+        wasExpanded: wasExpanded
+      }
+      
+    } catch (error) {
+      console.error('Error expanding selection to sentence:', error)
+      return {
+        displayText: selectedText,
+        fullSentence: selectedText,
+        selectedWords: selectedText,
+        wasExpanded: false
+      }
     }
   }
 
@@ -196,7 +291,7 @@ const PDFViewer = ({ pdfUrl }) => {
       {selectedText && (
         <div className="selected-text-display">
           <div className="selected-text-header">
-            <h4>Selected Text:</h4>
+            <h4>📖 Context Selection:</h4>
             <button 
               onClick={() => {
                 setSelectedText('')
@@ -208,8 +303,15 @@ const PDFViewer = ({ pdfUrl }) => {
               Clear
             </button>
           </div>
-          <p>"{selectedText}"</p>
-          <small>Page {pageNumber} • {selectedText.split(' ').length} words • {selectedText.length} characters</small>
+          <div className="context-display">
+            <p className="context-text">"{selectedText}"</p>
+            <div className="selection-info">
+              <span className="info-badge">Page {pageNumber}</span>
+              <span className="info-badge">{selectedText.split(' ').length} words</span>
+              <span className="info-badge">{selectedText.length} chars</span>
+              <span className="info-badge context-badge">📝 Full Context</span>
+            </div>
+          </div>
         </div>
       )}
 

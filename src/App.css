@@ -377,7 +377,62 @@
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-.selected-text-display p {
+/* Context Display */
+.context-display {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.context-text {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  position: relative;
+}
+
+.context-text::before {
+  content: '📝';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Selection Info Badges */
+.selection-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.info-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.context-badge {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+/* Legacy styles for compatibility */
+.selected-text-display p:not(.context-text) {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
   line-height: 1.5;
@@ -584,9 +639,18 @@
     font-size: 0.9rem;
   }
   
-  .selected-text-display p {
+  .context-text {
     font-size: 1rem;
-    padding: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  .info-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+  
+  .selection-info {
+    gap: 0.35rem;
   }
   
   /* Page Number Indicator on Mobile */
