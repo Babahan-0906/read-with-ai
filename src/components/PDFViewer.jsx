@@ -46,14 +46,16 @@ const PDFViewer = ({ pdfUrl }) => {
       
       console.log('=== TEXT SELECTION ===')
       console.log('Original selection:', text)
-      console.log('Expanded to sentence:', expandedText.fullSentence)
+      console.log('Expanded to context:', expandedText.fullContext)
       console.log('Selected word(s):', expandedText.selectedWords)
       console.log('Context details:', {
         originalText: text,
-        fullSentence: expandedText.fullSentence,
+        fullContext: expandedText.fullContext,
         selectedWords: expandedText.selectedWords,
         wordCount: text.split(' ').length,
-        sentenceLength: expandedText.fullSentence.length,
+        contextLength: expandedText.fullContext.length,
+        contextSpans: expandedText.contextSpans,
+        spanRange: expandedText.spanRange,
         page: detectedPage,
         viewMode: viewMode,
         isExpanded: expandedText.wasExpanded
@@ -64,85 +66,98 @@ const PDFViewer = ({ pdfUrl }) => {
     }
   }
 
-  // Function to expand selection to full sentence context
+  // Function to expand selection to include surrounding lines
   const expandToSentenceContext = (selectedText, selection) => {
     try {
       const range = selection.getRangeAt(0)
-      const containerElement = range.commonAncestorContainer.parentElement
-      
-      // Get the full text content of the container
-      let fullText = ''
-      if (containerElement) {
-        // Try to get text from the text layer span or parent
-        const textLayerSpan = containerElement.closest('.react-pdf__Page__textContent span') || 
-                             containerElement.closest('.react-pdf__Page__textContent')
-        
-        if (textLayerSpan) {
-          fullText = textLayerSpan.textContent || textLayerSpan.innerText || ''
-        } else {
-          fullText = containerElement.textContent || containerElement.innerText || ''
-        }
-      }
-      
-      if (!fullText) {
+      const startContainer = range.startContainer
+      const endContainer = range.endContainer
+
+      // Find the text layer and get all text spans
+      const textLayerDiv = startContainer.parentElement?.closest('.react-pdf__Page__textContent') ||
+                          startContainer.parentElement?.closest('.textLayer')
+
+      if (!textLayerDiv) {
         return {
           displayText: selectedText,
-          fullSentence: selectedText,
+          fullContext: selectedText,
           selectedWords: selectedText,
           wasExpanded: false
         }
       }
-      
-      // Find the position of selected text in the full text
-      const selectedIndex = fullText.indexOf(selectedText)
-      if (selectedIndex === -1) {
+
+      // Get all text spans from the text layer
+      const textSpans = Array.from(textLayerDiv.querySelectorAll('span')).filter(span =>
+        span.textContent && span.textContent.trim().length > 0
+      )
+
+      // Find the spans that contain the selection
+      const selectedSpans = []
+      let currentText = ''
+      let selectionStartIndex = -1
+      let selectionEndIndex = -1
+
+      console.log('Debug: Looking for selection in', textSpans.length, 'spans')
+      console.log('Debug: Start container:', startContainer)
+      console.log('Debug: End container:', endContainer)
+
+      for (let i = 0; i < textSpans.length; i++) {
+        const span = textSpans[i]
+        const spanText = span.textContent || ''
+
+        // Check if this span contains part of the selection
+        if (startContainer.nodeType === Node.TEXT_NODE &&
+            span.contains(startContainer.parentElement)) {
+          selectionStartIndex = i
+          console.log('Debug: Found start span at index', i, 'with text:', spanText)
+        }
+
+        if (endContainer.nodeType === Node.TEXT_NODE &&
+            span.contains(endContainer.parentElement)) {
+          selectionEndIndex = i
+          console.log('Debug: Found end span at index', i, 'with text:', spanText)
+        }
+
+        currentText += spanText + ' '
+      }
+
+      console.log('Debug: Selection spans - Start:', selectionStartIndex, 'End:', selectionEndIndex)
+
+      // If we couldn't find the exact spans, fall back to simple context
+      if (selectionStartIndex === -1 && selectionEndIndex === -1) {
         return {
           displayText: selectedText,
-          fullSentence: selectedText,
+          fullContext: selectedText,
           selectedWords: selectedText,
           wasExpanded: false
         }
       }
-      
-      // Define sentence boundaries (periods, exclamation marks, question marks)
-      const sentenceEnders = /[.!?]+/g
-      
-      // Find sentence start (look backwards for sentence enders)
-      let sentenceStart = 0
-      const textBeforeSelection = fullText.substring(0, selectedIndex)
-      const lastSentenceEnderMatch = textBeforeSelection.match(/[.!?]+/g)
-      if (lastSentenceEnderMatch) {
-        const lastEnderIndex = textBeforeSelection.lastIndexOf(lastSentenceEnderMatch[lastSentenceEnderMatch.length - 1])
-        sentenceStart = lastEnderIndex + lastSentenceEnderMatch[lastSentenceEnderMatch.length - 1].length
-      }
-      
-      // Find sentence end (look forwards for sentence enders)
-      let sentenceEnd = fullText.length
-      const textAfterSelection = fullText.substring(selectedIndex + selectedText.length)
-      const nextSentenceEnderMatch = textAfterSelection.match(/[.!?]+/)
-      if (nextSentenceEnderMatch) {
-        const nextEnderIndex = textAfterSelection.indexOf(nextSentenceEnderMatch[0])
-        sentenceEnd = selectedIndex + selectedText.length + nextEnderIndex + nextSentenceEnderMatch[0].length
-      }
-      
-      // Extract the full sentence
-      const fullSentence = fullText.substring(sentenceStart, sentenceEnd).trim()
-      
-      // Check if we actually expanded (more than just the selected text)
-      const wasExpanded = fullSentence !== selectedText.trim()
-      
+
+      // Get the range of spans to include (2 spans before to 2 spans after)
+      const startSpan = Math.max(0, Math.min(selectionStartIndex, selectionEndIndex) - 2)
+      const endSpan = Math.min(textSpans.length, Math.max(selectionStartIndex, selectionEndIndex) + 3)
+
+      // Extract text from the surrounding spans
+      const contextSpans = textSpans.slice(startSpan, endSpan)
+      const fullContext = contextSpans.map(span => span.textContent || '').join(' ').trim()
+
+      // Check if we actually expanded
+      const wasExpanded = fullContext !== selectedText.trim() && contextSpans.length > 1
+
       return {
-        displayText: wasExpanded ? fullSentence : selectedText,
-        fullSentence: fullSentence,
+        displayText: wasExpanded ? fullContext : selectedText,
+        fullContext: fullContext,
         selectedWords: selectedText,
-        wasExpanded: wasExpanded
+        wasExpanded: wasExpanded,
+        contextSpans: contextSpans.length,
+        spanRange: `${startSpan + 1}-${endSpan}`
       }
-      
+
     } catch (error) {
-      console.error('Error expanding selection to sentence:', error)
+      console.error('Error expanding selection to context:', error)
       return {
         displayText: selectedText,
-        fullSentence: selectedText,
+        fullContext: selectedText,
         selectedWords: selectedText,
         wasExpanded: false
       }
@@ -309,7 +324,7 @@ const PDFViewer = ({ pdfUrl }) => {
               <span className="info-badge">Page {pageNumber}</span>
               <span className="info-badge">{selectedText.split(' ').length} words</span>
               <span className="info-badge">{selectedText.length} chars</span>
-              <span className="info-badge context-badge">📝 Full Context</span>
+              <span className="info-badge context-badge">📄 Multi-line Context</span>
             </div>
           </div>
         </div>

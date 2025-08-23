@@ -6,11 +6,13 @@ An interactive PDF translation tool that allows users to upload PDFs and tap on 
 
 - 📄 **PDF Upload**: Drag and drop or browse to upload PDF files
 - 🔍 **Interactive Text Selection**: Click and select text directly on the PDF
-- 🌐 **Instant Translation**: Get translations for selected words or phrases
+- 📝 **Smart Context Expansion**: Automatically expands selections to include surrounding lines for better context
+- 🔄 **Dual View Modes**: Single page view and scrollable document view
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 - 🎨 **Modern UI**: Beautiful, intuitive interface with smooth animations
 - 🔧 **PDF Controls**: Zoom, rotate, and navigate through pages
-- 📋 **Copy Translations**: Copy translated text to clipboard
+- 📋 **Console Logging**: Detailed logging of all text selections and expansions
+- 📊 **Visual Feedback**: Real-time display of selected text with context information
 
 ## Tech Stack
 
@@ -56,11 +58,32 @@ npm run dev     # Frontend (port 5173)
 ## Usage
 
 1. **Upload a PDF**: Drag and drop a PDF file onto the upload area or click to browse
-2. **Navigate**: Use the page controls to move between pages
-3. **Select Text**: Click and drag to select text on the PDF
-4. **Get Translation**: A popup will appear with the translation
-5. **Copy Translation**: Click the copy button to copy the translation to clipboard
-6. **Adjust View**: Use zoom and rotate controls to adjust the PDF view
+2. **Choose View Mode**: Toggle between Single Page and Scroll View
+3. **Navigate**: Use page controls (in single mode) or scroll naturally (in scroll mode)
+4. **Select Text**: Click and drag to select text on the PDF
+   - **Any selection**: Automatically expands to include the line above and below for better context
+   - **Multi-line context**: Provides comprehensive surrounding text for understanding
+5. **View Context**: See the expanded context both visually and in the console
+6. **Clear Selection**: Click the "Clear" button to reset the selection
+7. **Adjust View**: Use zoom controls to adjust the PDF view
+
+### Context Selection Examples
+
+```javascript
+// Console output shows:
+=== TEXT SELECTION ===
+Original selection: "world"
+Expanded to context: "Hello world! How are you today? This is a great example."
+Selected word(s): "world"
+Context details: {
+  originalText: "world",
+  fullContext: "Hello world! How are you today? This is a great example.",
+  contextLines: 2,
+  lineRange: "1-3",
+  isExpanded: true
+}
+====================
+```
 
 ## API Integration
 
@@ -104,6 +127,11 @@ The application currently uses a mock translation service. To integrate with a r
    return response.data[0].translations[0].text;
    ```
 
+## Documentation
+
+- **[TEXT_SELECTION_DOCS.md](TEXT_SELECTION_DOCS.md)** - Comprehensive documentation on text selection and context expansion
+- **[git-workflow.md](git-workflow.md)** - Git workflow and development guidelines
+
 ## Project Structure
 
 ```
@@ -111,20 +139,24 @@ pdf-translator/
 ├── src/
 │   ├── components/
 │   │   ├── PDFUploader.jsx      # PDF upload component
-│   │   ├── PDFViewer.jsx        # PDF viewer with controls
-│   │   ├── TranslationPopup.jsx # Translation popup
-│   │   └── TranslationProvider.jsx # Translation context provider
+│   │   ├── PDFViewer.jsx        # PDF viewer with context selection
+│   │   ├── TranslationPopup.jsx # Translation popup (future)
+│   │   └── TranslationProvider.jsx # Translation context provider (future)
 │   ├── contexts/
-│   │   └── TranslationContext.jsx # Translation context
+│   │   └── TranslationContext.jsx # Translation context (future)
 │   ├── hooks/
-│   │   └── useTranslation.js    # Translation hook
+│   │   └── useTranslation.js    # Translation hook (future)
+│   ├── utils/
+│   │   └── pdfTextExtractor.js  # PDF text extraction utilities
 │   ├── App.jsx                  # Main app component
 │   ├── main.jsx                 # React entry point
 │   ├── App.css                  # App styles
 │   └── index.css                # Global styles
-├── server.js                    # Express backend
+├── server.js                    # Express backend (for future translation API)
 ├── package.json                 # Dependencies and scripts
-└── README.md                    # This file
+├── README.md                    # This file
+├── TEXT_SELECTION_DOCS.md       # Text selection documentation
+└── git-workflow.md              # Git workflow guidelines
 ```
 
 ## Customization
