@@ -1,0 +1,4 @@
+TODO:
+- integrate gemini api for context translation/meaning
+- integrate gcp for text extraction from image based pdfs
+- add a button to toggle the context meaning

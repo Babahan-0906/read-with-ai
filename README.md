@@ -7,6 +7,7 @@ An interactive PDF translation tool that allows users to upload PDFs and tap on 
 - 📄 **PDF Upload**: Drag and drop or browse to upload PDF files
 - 🔍 **Interactive Text Selection**: Click and select text directly on the PDF
 - 📝 **Smart Context Expansion**: Automatically expands selections to include surrounding lines for better context
+- 🤖 **AI Word Explanations**: Get bilingual explanations (English + Turkish/Russian/Turkmen) powered by Google Gemini AI
 - 🔄 **Dual View Modes**: Single page view and scrollable document view
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 - 🎨 **Modern UI**: Beautiful, intuitive interface with smooth animations
@@ -20,7 +21,7 @@ An interactive PDF translation tool that allows users to upload PDFs and tap on 
 - **PDF Processing**: react-pdf, pdfjs-dist
 - **UI Components**: Lucide React icons
 - **Styling**: CSS3 with modern design patterns
-- **Backend**: Express.js (for translation API)
+- **Backend**: Express.js with Gemini AI integration
 - **HTTP Client**: Axios
 
 ## Getting Started
@@ -29,6 +30,7 @@ An interactive PDF translation tool that allows users to upload PDFs and tap on 
 
 - Node.js (version 16 or higher)
 - npm or yarn
+- Google Gemini AI API Key (get from [Google AI Studio](https://aistudio.google.com/app/apikey))
 
 ### Installation
 
@@ -43,7 +45,16 @@ cd pdf-translator
 npm install
 ```
 
-3. Start the development server:
+3. Set up your Gemini AI API key:
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env and add your API key
+# GOOGLE_AI_API_KEY=your_actual_api_key_here
+```
+
+4. Start the development server:
 ```bash
 # Start both frontend and backend
 npm run dev:full
@@ -53,7 +64,7 @@ npm run server  # Backend (port 3001)
 npm run dev     # Frontend (port 5173)
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+5. Open your browser and navigate to `http://localhost:5173`
 
 ## Usage
 
@@ -63,9 +74,14 @@ npm run dev     # Frontend (port 5173)
 4. **Select Text**: Click and drag to select text on the PDF
    - **Any selection**: Automatically expands to include the line above and below for better context
    - **Multi-line context**: Provides comprehensive surrounding text for understanding
-5. **View Context**: See the expanded context both visually and in the console
-6. **Clear Selection**: Click the "Clear" button to reset the selection
-7. **Adjust View**: Use zoom controls to adjust the PDF view
+5. **Choose Secondary Language**: Select your preferred secondary language (Turkish, Russian, Turkmen)
+6. **Get Word Explanations**: For single words or short selections, AI explanations appear automatically
+   - **Bilingual Explanations**: Dictionary and contextual meanings in both English and your selected language
+   - **Dictionary View**: Traditional dictionary definitions in both languages
+   - **Context View**: How the word is used in the specific context in both languages
+7. **Toggle Explanation Views**: Use the buttons to switch between dictionary and contextual explanations
+8. **Clear Selection**: Click the "Clear" button to reset the selection and explanations
+9. **Adjust View**: Use zoom controls to adjust the PDF view
 
 ### Context Selection Examples
 
@@ -81,6 +97,16 @@ Context details: {
   contextLines: 2,
   lineRange: "1-3",
   isExpanded: true
+}
+
+// API Response includes both languages:
+{
+  word: "world",
+  dictionaryEnglish: "noun: the earth and all people and things on it",
+  dictionarySecondary: "isim: dünya ve üzerindeki tüm insanlar ve şeyler",
+  contextualEnglish: "Here 'world' refers to the planet Earth",
+  contextualSecondary: "Burada 'world' gezegen Dünya anlamına gelir",
+  secondaryLanguage: "turkish"
 }
 ====================
 ```

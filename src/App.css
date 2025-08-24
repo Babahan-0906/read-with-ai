@@ -160,6 +160,45 @@
   font-weight: 500;
 }
 
+/* Language Controls */
+.language-controls {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.language-select {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.language-select:hover {
+  border-color: #667eea;
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
 .page-controls {
   display: flex;
   align-items: center;
@@ -455,6 +494,179 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Word Explanation Display */
+.word-explanation-display {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.4s ease-out;
+}
+
+.explanation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.explanation-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.explanation-controls {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.explanation-toggle {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.explanation-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.explanation-toggle.active {
+  background: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+.explanation-content {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.dictionary-explanation h5,
+.contextual-explanation h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* Bilingual Explanations */
+.language-explanations {
+  display: grid;
+  gap: 1rem;
+}
+
+.contextual-explanation p:first-of-type {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  font-style: italic;
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.explanation-box.primary {
+  background: rgba(255, 255, 255, 0.15);
+  border-left-color: #4f46e5;
+}
+
+.explanation-box.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: #10b981;
+}
+
+.explanation-box h6 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.explanation-box {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.explanation-box p {
+  margin: 0;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.loading-explanation {
+  text-align: center;
+  padding: 1rem;
+}
+
+.loading-explanation p {
+  margin-top: 0.5rem;
+  opacity: 0.8;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .word-explanation-display {
+    padding: 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .explanation-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .explanation-header h4 {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .explanation-controls {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .explanation-toggle {
+    flex: 1;
+    justify-content: center;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .language-controls {
+    justify-content: center;
+  }
+
+  .language-selector {
+    font-size: 0.8rem;
+  }
+
+  .language-select {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
   }
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookOpen, MessageCircle, Languages } from 'lucide-react'
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
@@ -11,6 +11,9 @@ const PDFViewer = ({ pdfUrl }) => {
   const [scale, setScale] = useState(1.0)
   const [selectedText, setSelectedText] = useState('')
   const [viewMode, setViewMode] = useState('single') // 'single' or 'scroll'
+  const [wordExplanation, setWordExplanation] = useState(null)
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false)
+  const [showContextual, setShowContextual] = useState(false)
   
   const containerRef = useRef(null)
   const pageRef = useRef(null)
@@ -43,7 +46,7 @@ const PDFViewer = ({ pdfUrl }) => {
       
       setSelectedText(expandedText.displayText)
       setPageNumber(detectedPage) // Update current page for display
-      
+
       console.log('=== TEXT SELECTION ===')
       console.log('Original selection:', text)
       console.log('Expanded to context:', expandedText.fullContext)
@@ -61,6 +64,16 @@ const PDFViewer = ({ pdfUrl }) => {
         isExpanded: expandedText.wasExpanded
       })
       console.log('====================')
+
+      // Automatically get explanation for the first word or short selection
+      const words = text.trim().split(' ')
+      if (words.length === 1 || (words.length <= 3 && text.length < 20)) {
+        const firstWord = words[0].replace(/[^\w]/g, '')
+        if (firstWord.length > 2) { // Only explain meaningful words
+          console.log('Auto-explaining word:', firstWord)
+          getWordExplanation(firstWord, expandedText.fullContext)
+        }
+      }
     } else {
       setSelectedText('')
     }
@@ -207,10 +220,72 @@ const PDFViewer = ({ pdfUrl }) => {
     console.log('Next page:', pageNumber + 1)
   }
 
+  // Helper functions for language display
+  const getLanguageFlag = (lang) => {
+    const flags = {
+      turkish: '🇹🇷',
+      russian: '🇷🇺',
+      turkmen: '🇹🇲'
+    }
+    return flags[lang] || '🌐'
+  }
+
+  const getLanguageName = (lang) => {
+    const names = {
+      turkish: 'Turkish',
+      russian: 'Russian',
+      turkmen: 'Turkmen'
+    }
+    return names[lang] || lang
+  }
+
   const toggleViewMode = () => {
     const newMode = viewMode === 'single' ? 'scroll' : 'single'
     setViewMode(newMode)
     console.log('View mode changed to:', newMode)
+  }
+
+  // Function to get word explanation from Gemini API
+  const getWordExplanation = async (word, context) => {
+    if (!word || word.trim().length === 0) return
+
+    setIsLoadingExplanation(true)
+    console.log('Requesting explanation for word:', word)
+
+    try {
+      const response = await fetch('http://localhost:3001/api/explain-word', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          word: word.trim(),
+          context: context,
+          selectedText: selectedText,
+          secondaryLanguage: secondaryLanguage
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setWordExplanation(data)
+      setShowContextual(false) // Start with dictionary view
+      console.log('Word explanation received:', data)
+
+    } catch (error) {
+      console.error('Error getting word explanation:', error)
+      setWordExplanation({
+        word: word,
+        dictionary: 'Unable to get definition at this time',
+        contextual: 'Unable to analyze context at this time',
+        error: true
+      })
+    } finally {
+      setIsLoadingExplanation(false)
+    }
   }
 
   // Render all pages for scroll mode
@@ -253,18 +328,34 @@ const PDFViewer = ({ pdfUrl }) => {
       <div className="pdf-controls">
         {/* View Mode Toggle */}
         <div className="view-mode-controls">
-          <button 
+          <button
             onClick={toggleViewMode}
             className={`view-mode-button ${viewMode === 'single' ? 'active' : ''}`}
           >
             📄 Single Page
           </button>
-          <button 
+          <button
             onClick={toggleViewMode}
             className={`view-mode-button ${viewMode === 'scroll' ? 'active' : ''}`}
           >
             📜 Scroll View
           </button>
+        </div>
+
+        {/* Language Selection */}
+        <div className="language-controls">
+          <div className="language-selector">
+            <Languages size={16} />
+            <select
+              value={secondaryLanguage}
+              onChange={(e) => setSecondaryLanguage(e.target.value)}
+              className="language-select"
+            >
+              <option value="turkish">🇹🇷 Turkish</option>
+              <option value="russian">🇷🇺 Russian</option>
+              <option value="turkmen">🇹🇲 Turkmen</option>
+            </select>
+          </div>
         </div>
 
         {/* Page Navigation (only for single page mode) */}
@@ -307,9 +398,10 @@ const PDFViewer = ({ pdfUrl }) => {
         <div className="selected-text-display">
           <div className="selected-text-header">
             <h4>📖 Context Selection:</h4>
-            <button 
+            <button
               onClick={() => {
                 setSelectedText('')
+                setWordExplanation(null)
                 window.getSelection().removeAllRanges()
                 console.log('Selection cleared')
               }}
@@ -326,6 +418,72 @@ const PDFViewer = ({ pdfUrl }) => {
               <span className="info-badge">{selectedText.length} chars</span>
               <span className="info-badge context-badge">📄 Multi-line Context</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Word Explanation Display */}
+      {wordExplanation && (
+        <div className="word-explanation-display">
+          <div className="explanation-header">
+            <h4>🔍 Word Explanation: <strong>{wordExplanation.word}</strong></h4>
+            <div className="explanation-controls">
+              <button
+                onClick={() => setShowContextual(false)}
+                className={`explanation-toggle ${!showContextual ? 'active' : ''}`}
+              >
+                <BookOpen size={16} />
+                Dictionary
+              </button>
+              <button
+                onClick={() => setShowContextual(true)}
+                className={`explanation-toggle ${showContextual ? 'active' : ''}`}
+              >
+                <MessageCircle size={16} />
+                In Context
+              </button>
+            </div>
+          </div>
+          <div className="explanation-content">
+            {isLoadingExplanation ? (
+              <div className="loading-explanation">
+                <div className="loading-spinner"></div>
+                <p>Getting explanation...</p>
+              </div>
+            ) : (
+              <div className="explanation-text">
+                {showContextual ? (
+                  <div className="contextual-explanation">
+                    <h5>📝 Meaning in Context:</h5>
+                    <p>"{wordExplanation.context}"</p>
+                    <div className="language-explanations">
+                      <div className="explanation-box primary">
+                        <h6>🇺🇸 English:</h6>
+                        <p>{wordExplanation.contextualEnglish}</p>
+                      </div>
+                      <div className="explanation-box secondary">
+                        <h6>{getLanguageFlag(wordExplanation.secondaryLanguage)} {getLanguageName(wordExplanation.secondaryLanguage)}:</h6>
+                        <p>{wordExplanation.contextualSecondary}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="dictionary-explanation">
+                    <h5>📚 Dictionary Definition:</h5>
+                    <div className="language-explanations">
+                      <div className="explanation-box primary">
+                        <h6>🇺🇸 English:</h6>
+                        <p>{wordExplanation.dictionaryEnglish}</p>
+                      </div>
+                      <div className="explanation-box secondary">
+                        <h6>{getLanguageFlag(wordExplanation.secondaryLanguage)} {getLanguageName(wordExplanation.secondaryLanguage)}:</h6>
+                        <p>{wordExplanation.dictionarySecondary}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
