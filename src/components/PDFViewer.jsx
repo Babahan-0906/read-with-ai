@@ -14,6 +14,7 @@ const PDFViewer = ({ pdfUrl }) => {
   const [wordExplanation, setWordExplanation] = useState(null)
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false)
   const [showContextual, setShowContextual] = useState(false)
+  const [secondaryLanguage, setSecondaryLanguage] = useState('russian')
   
   const containerRef = useRef(null)
   const pageRef = useRef(null)

@@ -14,7 +14,7 @@ app.use(express.json())
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY)
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
 // Function to get word explanation from Gemini AI
 const getWordExplanation = async (word, context = '', secondaryLanguage = 'turkish') => {
@@ -26,43 +26,46 @@ const getWordExplanation = async (word, context = '', secondaryLanguage = 'turki
       turkmen: 'Turkmen'
     }
 
-    const targetLanguage = languageMap[secondaryLanguage] || 'Turkish'
+    console.log('Secondary language:', secondaryLanguage)
+    console.log('Recieved Context:', context)
+
+    const targetLanguage = languageMap[secondaryLanguage] || 'Russian'
 
     const prompt = `
-You are a helpful dictionary and language assistant. Your task is to give a very simple explanation for someone learning English (pre-intermediate level). Follow the rules strictly.
+      You are a helpful dictionary and language assistant. Your task is to give a very simple explanation for someone learning English (pre-intermediate level). Follow the rules strictly.
 
-Provide information about the word "${word}" in FOUR parts:
+      Provide information about the word "${word}" in FOUR parts:
 
-PART 1 - DICTIONARY DEFINITION (English):
-- Give the part of speech (noun, verb, adjective, etc.)
-- Write the primary meaning(s) in very simple English
-- Add ONE very short example sentence
-- Keep the whole definition to 1–2 sentences maximum
+      PART 1 - DICTIONARY DEFINITION (English):
+      - Give the part of speech (noun, verb, adjective, etc.)
+      - Write the primary meaning(s) in very simple English
+      - Add 1-2 very short example sentences in "Example": "Example sentence" format
+      - Keep the whole definition to 1–2 sentences maximum
 
-PART 2 - DICTIONARY DEFINITION (${targetLanguage}):
-- Provide the exact same information as Part 1
-- But translate it into ${targetLanguage}
-- Keep the same format and simplicity
+      PART 2 - DICTIONARY DEFINITION (${targetLanguage}):
+      - Provide the exact same information as Part 1
+      - But translate it into ${targetLanguage}
+      - Keep the same format and simplicity
 
-PART 3 - CONTEXTUAL MEANING (English):
-${context ? `In the context: "${context}"` : `When used generally`}
-- Explain how "${word}" is used here
-- Say its role in the sentence (subject, verb, adjective, etc.)
-- Explain if it has a special meaning in this context
-- Keep the whole explanation to 1–2 sentences maximum
+      PART 3 - CONTEXTUAL MEANING (English):
+      ${context ? `In the context: "...${context}..."` : `When used generally`}
+      - Explain how "${word}" is used here
+      - Say its role in the sentence
+      - Explain if it has a special meaning in this context
+      - Keep the whole explanation between 1 and 5 sentences maximum
 
-PART 4 - CONTEXTUAL MEANING (${targetLanguage}):
-- Provide the exact same information as Part 3
-- But translate it into ${targetLanguage}
-- Keep the same format and simplicity
+      PART 4 - CONTEXTUAL MEANING (${targetLanguage}):
+      - Provide the exact same information as Part 3
+      - But translate it into ${targetLanguage}
+      - Keep the same format and simplicity
 
-STRICT FORMAT:
-Answer in this exact format and nothing else:
-DICTIONARY_ENGLISH: [English dictionary definition here]
-DICTIONARY_${secondaryLanguage.toUpperCase()}: [${targetLanguage} dictionary definition here]
-CONTEXT_ENGLISH: [English contextual explanation here]
-CONTEXT_${secondaryLanguage.toUpperCase()}: [${targetLanguage} contextual explanation here]
-`;
+      STRICT FORMAT:
+      Answer in this exact format and nothing else:
+      DICTIONARY_ENGLISH: [English dictionary definition here]
+      DICTIONARY_${secondaryLanguage.toUpperCase()}: [${targetLanguage} dictionary definition here]
+      CONTEXT_ENGLISH: [English contextual explanation here]
+      CONTEXT_${secondaryLanguage.toUpperCase()}: [${targetLanguage} contextual explanation here]
+    `;
 
 
     const result = await model.generateContent(prompt)
@@ -125,7 +128,7 @@ app.post('/api/explain-word', async (req, res) => {
   try {
     console.log('Explaining word:', word, 'in context:', context, 'secondary language:', secondaryLanguage)
 
-    const explanation = await getWordExplanation(word, context || selectedText, secondaryLanguage || 'turkish')
+    const explanation = await getWordExplanation(word, context || selectedText, secondaryLanguage || 'russian')
 
     res.json({
       word: word,
